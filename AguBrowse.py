@@ -28,10 +28,12 @@ import urllib
 import urllib2
 import sqlite3
 import pygame
+import gi
 
 from gi.repository import Gtk
 from gi.repository import Pango
-from gi.repository import WebKit
+gi.require_version('WebKit2', '4.0')
+from gi.repository import WebKit2
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
 
@@ -87,7 +89,7 @@ class AguBrowse(activity.Activity):
         sesion = open(datos + "Sesion", "w")
 
         if guardar:
-            sesion.write(str(self.navegador.get_main_frame().get_uri()))
+            sesion.write(str(self.navegador.get_main_resource().get_uri()))
         
         else:
             sesion.write("")
@@ -123,7 +125,7 @@ class AguBrowse(activity.Activity):
         self.dir_ventana_emergente = None
 
         scroll = Gtk.ScrolledWindow()
-        navegador = webkit.WebView()
+        navegador = WebKit2.WebView()
         scroll.add(navegador)
 
         ventana = Gtk.Window()
@@ -132,8 +134,8 @@ class AguBrowse(activity.Activity):
         ventana.add(scroll)
         ventana.show_all()
 
-        navegador.connect("title-changed", self.webview_titulo, ventana)
-        web_view.connect("download-requested", self.descargar_archivo, ventana)
+        navegador.connect("notify::title", self.webview_titulo, ventana)
+        #web_view.connect("download-requested", self.descargar_archivo, ventana)
 
         return navegador
 
@@ -149,10 +151,10 @@ class AguBrowse(activity.Activity):
             dir = url
 
         if "http://" in dir or "https://" in dir or "ftp://" in dir or "about:" in dir or "file:///" in dir or "view-source:" in dir or "http//" in dir:
-            self.navegador.open(dir)
+            self.navegador.load_uri(dir)
 
         else:
-            self.navegador.open("http://" + dir)
+            self.navegador.load_uri("http://" + dir)
 
         if widget:
             widget.set_text("http://" + dir)
@@ -497,7 +499,7 @@ GNU General Public License para más detalles.''')
         Selector_de_Archivos(self)
 
     def abrir_archivo(self, archivo):
-        self.navegador.open("file://" + archivo)
+        self.navegador.load_uri("file://" + archivo)
 
     def buscar_texto(self, widget):
         Buscar(self.navegador)
@@ -684,19 +686,19 @@ GNU General Public License para más detalles.''')
         vbox.add(self.notebook)
         self.main.add2(vbox)
 
-        self.navegador = WebKit.WebView()
+        self.navegador = WebKit2.WebView()
         self.navegador.set_size_request(700, 500)
-        self.navegador.connect("title-changed", self.set_titulo)
-        self.navegador.connect("load-finished", self.listo)
-        self.navegador.connect("load-started", self.cargando)
-        self.navegador.connect("load-progress-changed", self.set_progreso)
-        self.navegador.connect("load-error", self.error)
-        self.navegador.connect("download-requested", self.descargar_archivo, Gtk.Window())
-        self.navegador.connect("create-web-view", self.ventana_con_webview)
-        self.navegador.connect("populate-popup", self.menu_webview)
-        self.navegador.connect("status-bar-text-changed", self.set_text_status)
-        self.navegador.connect("icon-loaded", self.favicon)
-        self.navegador.set_property("transparent", True)
+        self.navegador.connect("notify::title", self.set_titulo)
+        self.navegador.connect("web-process-terminated", self.listo)
+        self.navegador.connect("resource-load-started", self.cargando)
+        self.navegador.connect("load-changed", self.set_progreso)
+        self.navegador.connect("load-failed", self.error)
+        #self.navegador.connect("download-requested", self.descargar_archivo, Gtk.Window())
+        self.navegador.connect("create", self.ventana_con_webview)
+        self.navegador.connect("context-menu", self.menu_webview)
+        #self.navegador.connect("status-bar-text-changed", self.set_text_status)
+        #self.navegador.connect("icon-loaded", self.favicon)
+        #self.navegador.set_property("transparent", True)
 
         self.label = Gtk.Label()
         self.favicon_i = Gtk.Image()
@@ -717,7 +719,7 @@ GNU General Public License para más detalles.''')
             direccion_principal = "file:///" + os.path.join(os.getcwd(), "Home.html")
 
         self.abrir_direccion(None, url=direccion_principal)
-        self.navegador.open(self.dp)
+        self.navegador.load_uri(self.dp)
 
         self.scroll = Gtk.ScrolledWindow()
         self.scroll.add(self.navegador)
@@ -1027,7 +1029,7 @@ GNU General Public License para más detalles.''')
                 print "NO"
 
             else:
-                self.navegador.open(sesion.read())
+                self.navegador.load_uri(sesion.read())
                 print sesion.read()
 
         sesion.close()

@@ -15,7 +15,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 from gi.repository import Gtk
-from gi.repository import WebKit
+from gi.repository import WebKit2
 
 
 class Inspector(Gtk.Window):
@@ -42,7 +42,7 @@ class Inspector(Gtk.Window):
         ##scrolled_window.props.vscrollbar_policy = Gtk.PolicyType.AUTOMATIC
         self.add(scroll)
 
-        view = WebKit.WebView()
+        view = WebKit2.WebView()
         scroll.add(view)
         scroll.show_all()
 
